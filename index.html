@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cadena de Bicicleta 3D - Redmi Pad SE</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #030712;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .tablet-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 40%, #1e293b 0%, #0f172a 60%, #020617 100%);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tablet-container">
+    <canvas id="chainCanvas"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('chainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const NUM_LINKS = 18;
+    let LINK_LENGTH = 80; 
+    let SPEED = 9;         
+
+    let width = 0;
+    let height = 0;
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+
+      const minDim = Math.min(width, height);
+      LINK_LENGTH = Math.max(60, Math.min(100, minDim * 0.09));
+      SPEED = Math.max(7, LINK_LENGTH * 0.11);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Direcció inicial exacta a 45 graus (diagonal)
+    let vx = SPEED * Math.SQRT1_2;
+    let vy = SPEED * Math.SQRT1_2;
+
+    const links = [];
+    const startX = width / 2 || 300;
+    const startY = height / 2 || 300;
+
+    for (let i = 0; i < NUM_LINKS; i++) {
+      links.push({
+        x: startX - i * LINK_LENGTH * Math.SQRT1_2,
+        y: startY - i * LINK_LENGTH * Math.SQRT1_2,
+        angle: Math.PI / 4
+      });
+    }
+
+    function updatePhysics() {
+      links[0].x += vx;
+      links[0].y += vy;
+
+      const bounceMargin = LINK_LENGTH * 0.7;
+
+      if (links[0].x + bounceMargin >= width) {
+        links[0].x = width - bounceMargin;
+        vx = -Math.abs(vx);
+      } else if (links[0].x - bounceMargin <= 0) {
+        links[0].x = bounceMargin;
+        vx = Math.abs(vx);
+      }
+
+      if (links[0].y + bounceMargin >= height) {
+        links[0].y = height - bounceMargin;
+        vy = -Math.abs(vy);
+      } else if (links[0].y - bounceMargin <= 0) {
+        links[0].y = bounceMargin;
+        vy = Math.abs(vy);
+      }
+
+      for (let i = 1; i < NUM_LINKS; i++) {
+        const dx = links[i - 1].x - links[i].x;
+        const dy = links[i - 1].y - links[i].y;
+        const distance = Math.hypot(dx, dy);
+
+        links[i].angle = Math.atan2(dy, dx);
+
+        if (distance !== 0) {
+          const overlap = distance - LINK_LENGTH;
+          links[i].x += (dx / distance) * overlap;
+          links[i].y += (dy / distance) * overlap;
+        }
+      }
+    }
+
+    // Geometria de la baula amb cintura corbada de bicicleta
+    function drawLinkShape(w, h) {
+      const r = h / 2;
+      const waist = h * 0.65;
+      const innerW = w - 2 * r;
+
+      ctx.beginPath();
+      ctx.arc(-innerW / 2, 0, r, Math.PI * 0.5, Math.PI * 1.5);
+      ctx.quadraticCurveTo(0, -waist / 2, innerW / 2, -r);
+      ctx.arc(innerW / 2, 0, r, Math.PI * 1.5, Math.PI * 0.5);
+      ctx.quadraticCurveTo(0, waist / 2, -innerW / 2, r);
+      ctx.closePath();
+    }
+
+    function drawChain() {
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Quadrícula subtil amb profunditat de fons
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.lineWidth = 1;
+      const gridSize = 70;
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+      }
+      for (let y = 0; y < height; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+      }
+
+      const plateW = LINK_LENGTH * 1.35;
+      const plateH = LINK_LENGTH * 0.65;
+
+      // 2. OMBRA PROJECTADA GENERAL AL TERRA (Profunditat 3D)
+      ctx.save();
+      for (let i = NUM_LINKS - 1; i >= 0; i--) {
+        const link = links[i];
+        ctx.save();
+        ctx.translate(link.x + 18, link.y + 24); // Desplaçament de l'ombra focalitzada
+        ctx.rotate(link.angle);
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.65)';
+        ctx.shadowColor = 'rgba(2, 6, 23, 0.9)';
+        ctx.shadowBlur = 16;
+        drawLinkShape(plateW * 1.05, plateH * 1.05);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // 3. CAPA INFERIOR: Rodets cilíndrics (3D) + Placa Interior
+      for (let i = NUM_LINKS - 1; i >= 0; i--) {
+        const link = links[i];
+        const isOuter = (i % 2 === 0);
+
+        ctx.save();
+        ctx.translate(link.x, link.y);
+        ctx.rotate(link.angle);
+
+        // Rodet cilíndric (Roller central) amb volum 3D
+        const rollerR = plateH * 0.36;
+        
+        // Base fosc del rodet
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath(); ctx.arc(0, 0, rollerR, 0, Math.PI * 2); ctx.fill();
+
+        // Degradat esfèric del rodet de metall polit
+        const gradRoller = ctx.createRadialGradient(-rollerR*0.3, -rollerR*0.3, 1, 0, 0, rollerR);
+        gradRoller.addColorStop(0, '#94a3b8');
+        gradRoller.addColorStop(0.5, '#334155');
+        gradRoller.addColorStop(1, '#0f172a');
+        ctx.fillStyle = gradRoller;
+        ctx.beginPath(); ctx.arc(0, 0, rollerR * 0.9, 0, Math.PI * 2); ctx.fill();
+
+        // Anell d'acer fosca de la placa interior
+        if (!isOuter) {
+          // Bisellat fosc de fons
+          ctx.save();
+          ctx.translate(2, 3);
+          ctx.fillStyle = '#020617';
+          drawLinkShape(plateW, plateH);
+          ctx.fill();
+          ctx.restore();
+
+          // Placa d'acer fosc brunyit (Dark Gunmetal Steel)
+          const gradInner = ctx.createLinearGradient(0, -plateH/2, 0, plateH/2);
+          gradInner.addColorStop(0, '#64748b');
+          gradInner.addColorStop(0.2, '#334155');
+          gradInner.addColorStop(0.8, '#1e293b');
+          gradInner.addColorStop(1, '#0f172a');
+
+          ctx.fillStyle = gradInner;
+          ctx.strokeStyle = '#090d16';
+          ctx.lineWidth = 2;
+
+          drawLinkShape(plateW, plateH);
+          ctx.fill();
+          ctx.stroke();
+
+          // Brillantor superior metàl·lica interior
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+          ctx.lineWidth = 1.5;
+          drawLinkShape(plateW * 0.94, plateH * 0.88);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      // 4. CAPA SUPERIOR: Plaques Exteriors Cromades 3D + Pins Rivetats
+      for (let i = NUM_LINKS - 1; i >= 0; i--) {
+        const link = links[i];
+        const isOuter = (i % 2 === 0);
+
+        ctx.save();
+        ctx.translate(link.x, link.y);
+        ctx.rotate(link.angle);
+
+        if (isOuter) {
+          // Ombra pròpia sobre la placa de sota
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+          ctx.shadowBlur = 10;
+          ctx.shadowOffsetX = 3;
+          ctx.shadowOffsetY = 6;
+
+          // Extrusió 3D / Gruix lateral de la placa cromada
+          ctx.fillStyle = '#1e293b';
+          ctx.save();
+          ctx.translate(0, 3);
+          drawLinkShape(plateW, plateH);
+          ctx.fill();
+          ctx.restore();
+
+          // Metall d'acer cromat hiper-brillant
+          const gradOuter = ctx.createLinearGradient(0, -plateH/2, 0, plateH/2);
+          gradOuter.addColorStop(0, '#ffffff');
+          gradOuter.addColorStop(0.15, '#e2e8f0');
+          gradOuter.addColorStop(0.45, '#94a3b8');
+          gradOuter.addColorStop(0.75, '#475569');
+          gradOuter.addColorStop(1, '#1e293b');
+
+          ctx.fillStyle = gradOuter;
+          ctx.strokeStyle = '#0f172a';
+          ctx.lineWidth = 2.5;
+
+          drawLinkShape(plateW, plateH);
+          ctx.fill();
+          ctx.shadowColor = 'transparent'; // desconnectar ombra per al perfilat
+          ctx.stroke();
+
+          // Reflex de llum 3D al límit superior (Highlight)
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          drawLinkShape(plateW * 0.96, plateH * 0.9);
+          ctx.stroke();
+        }
+
+        // PERNS / PINS D'ARTICULACIÓ (Efecte esfera/nit 3D)
+        const pinR = plateH * 0.23;
+
+        // Ombra del pin
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+
+        // Cos del Pern
+        const gradPin = ctx.createRadialGradient(-pinR*0.3, -pinR*0.3, 1, 0, 0, pinR);
+        gradPin.addColorStop(0, '#ffffff');
+        gradPin.addColorStop(0.4, '#cbd5e1');
+        gradPin.addColorStop(0.8, '#475569');
+        gradPin.addColorStop(1, '#0f172a');
+
+        ctx.fillStyle = gradPin;
+        ctx.strokeStyle = '#020617';
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath(); ctx.arc(0, 0, pinR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.shadowColor = 'transparent';
+
+        // Cavitat del rivet central (Forat central en 3D)
+        const holeR = pinR * 0.45;
+        const gradHole = ctx.createRadialGradient(holeR*0.2, holeR*0.2, 1, 0, 0, holeR);
+        gradHole.addColorStop(0, '#020617');
+        gradHole.addColorStop(0.7, '#0f172a');
+        gradHole.addColorStop(1, '#334155');
+
+        ctx.fillStyle = gradHole;
+        ctx.beginPath(); ctx.arc(0, 0, holeR, 0, Math.PI * 2); ctx.fill();
+
+        ctx.restore();
+      }
+
+      // 5. LED Vermell d'alta intensitat al cap (Serp de Joc estil Tron / Cyberpunk)
+      const head = links[0];
+      ctx.save();
+      ctx.translate(head.x, head.y);
+      
+      // Resplendor aura 3D
+      const gradGlow = ctx.createRadialGradient(0, 0, 2, 0, 0, 22);
+      gradGlow.addColorStop(0, 'rgba(239, 68, 68, 1)');
+      gradGlow.addColorStop(0.4, 'rgba(239, 68, 68, 0.5)');
+      gradGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
+
+      ctx.fillStyle = gradGlow;
+      ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
+
+      // Nuc central del LED
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+
+      ctx.restore();
+    }
+
+    function loop() {
+      updatePhysics();
+      drawChain();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
