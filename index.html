@@ -1,698 +1,400 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ca">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rellotge de Pèndol Vintage</title>
-    <style>
-        /* --- ESTILS GENERALS I VARIABLES D'AMBIENT --- */
-        :root {
-            --bg-color: #1a3a32; /* Verd fosc com la paret de la foto */
-            --wood-dark: #3b1f0b;
-            --wood-light: #6b3e1b;
-            --brass: #d4af37;
-            --brass-dark: #997a00;
-            --text-color: #f0e6d2;
-            --panel-bg: rgba(20, 30, 25, 0.85);
-            --shadow: 0 10px 30px rgba(0,0,0,0.7);
-        }
-
-        body.night {
-            --bg-color: #0a1412;
-            --wood-dark: #1a0f05;
-            --wood-light: #2a180a;
-            --brass: #8a7020;
-            --brass-dark: #5a4a10;
-            --text-color: #a0a0a0;
-            --panel-bg: rgba(0, 0, 0, 0.9);
-            --shadow: 0 10px 30px rgba(0,0,0,0.9);
-        }
-
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            font-family: 'Georgia', serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            overflow: hidden;
-            transition: background-color 2s ease;
-            /* Aquí pots posar la teva imatge de fons: background-image: url('la_teva_foto.jpg'); background-size: cover; */
-        }
-
-        /* --- CONTENIDOR PRINCIPAL DEL RELLOTGE --- */
-        .clock-container {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            height: 85vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 5vh;
-            filter: drop-shadow(var(--shadow));
-            transition: filter 2s ease;
-        }
-
-        /* --- COSSA DEL RELLOTGE (FUSTA) --- */
-        .clock-body {
-            position: relative;
-            width: 85%;
-            height: 60%;
-            background: linear-gradient(135deg, var(--wood-light), var(--wood-dark));
-            border-radius: 40px 40px 10px 10px;
-            border: 4px solid var(--wood-dark);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 15px;
-            z-index: 2;
-        }
-
-        /* --- ESCUT SUPERIOR (MAPA) --- */
-        .crest {
-            width: 60px;
-            height: 60px;
-            background: radial-gradient(circle, var(--brass), var(--brass-dark));
-            border-radius: 50%;
-            border: 2px solid var(--wood-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            color: #222;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-            margin-bottom: 10px;
-        }
-
-        /* --- ESFERA DEL RELLOTGE --- */
-        .clock-face {
-            position: relative;
-            width: 180px;
-            height: 180px;
-            background: radial-gradient(circle, #e8d8b0, #c4a46c);
-            border-radius: 50%;
-            border: 6px solid var(--brass);
-            box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Números romans simulats amb CSS */
-        .roman-numeral {
-            position: absolute;
-            font-size: 14px;
-            font-weight: bold;
-            color: #222;
-            font-family: 'Times New Roman', serif;
-        }
-
-        /* Agulles */
-        .hand {
-            position: absolute;
-            bottom: 50%;
-            left: 50%;
-            transform-origin: bottom center;
-            border-radius: 4px;
-            transition: transform 0.1s cubic-bezier(0.4, 2.5, 0.6, 0.5);
-        }
-        .hour-hand {
-            width: 6px;
-            height: 50px;
-            background: #111;
-            transform: translateX(-50%) rotate(0deg);
-            z-index: 5;
-        }
-        .minute-hand {
-            width: 4px;
-            height: 70px;
-            background: #111;
-            transform: translateX(-50%) rotate(0deg);
-            z-index: 6;
-        }
-        .center-pin {
-            width: 12px;
-            height: 12px;
-            background: var(--brass);
-            border-radius: 50%;
-            position: absolute;
-            z-index: 7;
-            border: 2px solid #111;
-        }
-
-        /* --- PÈNDOL I PESOS --- */
-        .pendulum-area {
-            position: relative;
-            width: 60%;
-            height: 40%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: -10px;
-            z-index: 1;
-        }
-
-        .pendulum-rod {
-            width: 4px;
-            height: 120px;
-            background: linear-gradient(to right, var(--brass-dark), var(--brass), var(--brass-dark));
-            position: relative;
-            transform-origin: top center;
-            animation: swing 2s ease-in-out infinite alternate;
-            margin-top: -20px;
-        }
-
-        .pendulum-bob {
-            width: 50px;
-            height: 50px;
-            background: radial-gradient(circle, var(--brass), var(--brass-dark));
-            border-radius: 50%;
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
-            border: 2px solid #553d00;
-        }
-
-        .weights-container {
-            display: flex;
-            gap: 40px;
-            margin-top: 20px;
-            position: relative;
-        }
-
-        .weight {
-            width: 25px;
-            height: 100px;
-            background: linear-gradient(to right, var(--brass-dark), var(--brass), var(--brass-dark));
-            border-radius: 5px 5px 2px 2px;
-            box-shadow: 2px 5px 10px rgba(0,0,0,0.6);
-            position: relative;
-            cursor: grab;
-            transition: transform 0.1s;
-        }
-        .weight:active {
-            cursor: grabbing;
-        }
-        .weight::after {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 10px;
-            height: 10px;
-            background: var(--brass-dark);
-            border-radius: 50%;
-        }
-
-        /* --- CONTROLS I BARRA DE CLIMA --- */
-        .controls {
-            position: absolute;
-            bottom: 10px;
-            display: flex;
-            gap: 15px;
-            z-index: 10;
-        }
-
-        .btn {
-            background: var(--panel-bg);
-            color: var(--text-color);
-            border: 1px solid var(--brass);
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s;
-        }
-        .btn:active {
-            transform: scale(0.95);
-            background: var(--brass);
-            color: #000;
-        }
-
-        /* Barra lliscant (Bottom Sheet) */
-        .weather-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 250px;
-            background: var(--panel-bg);
-            backdrop-filter: blur(10px);
-            border-top: 2px solid var(--brass);
-            border-radius: 20px 20px 0 0;
-            transform: translateY(210px); /* Amagat parcialment */
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 20;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-            touch-action: none;
-        }
-
-        .weather-sheet.open {
-            transform: translateY(0);
-        }
-
-        .drag-handle {
-            width: 50px;
-            height: 5px;
-            background: var(--brass);
-            border-radius: 5px;
-            margin-bottom: 15px;
-            cursor: grab;
-        }
-
-        .weather-content {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            color: var(--text-color);
-            font-size: 13px;
-            padding: 0 15px;
-        }
-
-        .weather-item {
-            display: flex;
-            flex-direction: column;
-            background: rgba(255,255,255,0.05);
-            padding: 8px;
-            border-radius: 8px;
-            border-left: 3px solid var(--brass);
-        }
-
-        .weather-item span:first-child {
-            font-size: 10px;
-            opacity: 0.7;
-        }
-        .weather-item span:last-child {
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .alert-box {
-            grid-column: span 2;
-            background: rgba(200, 50, 50, 0.3);
-            border: 1px solid #ff4444;
-            color: #ffcccc;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 12px;
-            display: none; /* S'amaga si no hi ha alertes */
-        }
-
-        /* --- ANIMACIONS --- */
-        @keyframes swing {
-            0% { transform: rotate(-15deg); }
-            100% { transform: rotate(15deg); }
-        }
-
-        /* --- RESPONSIVE (Escriptori) --- */
-        @media (min-width: 768px) {
-            .clock-container {
-                max-width: 450px;
-            }
-            .clock-face {
-                width: 220px;
-                height: 220px;
-            }
-            .hour-hand { height: 60px; }
-            .minute-hand { height: 85px; }
-            .weather-sheet {
-                transform: translateY(220px);
-            }
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Gargot a traç</title>
+<style>
+  :root{
+    --bg:#efe9dd; --card:#fffdf8; --ink:#22304a; --muted:#6b7385; --accent:#0f766e;
+    --line:#d9d0bd; --btn:#22304a; --btn-fg:#fffdf8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:max(12px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%;
+  }
+  main{max-width:1000px;margin:0 auto;display:grid;gap:12px}
+  h1{font-size:1.15rem;margin:0;font-weight:650;letter-spacing:.01em}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .bar .grow{flex:1 1 auto}
+  select,button{
+    font:inherit; color:var(--ink); background:var(--card);
+    border:1px solid var(--line); border-radius:10px; padding:9px 12px; min-height:42px;
+  }
+  button{cursor:pointer}
+  button.primary{background:var(--btn);color:var(--btn-fg);border-color:var(--btn)}
+  button:disabled{opacity:.45;cursor:default}
+  button:active:not(:disabled){transform:translateY(1px)}
+  label.chk{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:.9rem}
+  .temp{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.9rem}
+  .temp input{width:110px}
+  .status{min-height:1.4em;color:var(--muted);font-size:.95rem}
+  .status.err{color:#b42318}
+  .boards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+  .card h2{margin:2px 6px 6px;font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .board{
+    position:relative; width:100%; aspect-ratio:4/3; border-radius:10px; overflow:hidden;
+    background-color:#fffefb;
+    background-image:radial-gradient(circle,#e6dfcd 1px,transparent 1.2px);
+    background-size:22px 22px;
+  }
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #paper{touch-action:none;cursor:crosshair}
+  .hint{position:absolute;inset:0;display:grid;place-items:center;color:#a39b86;font-size:1rem;pointer-events:none;text-align:center;padding:16px}
+  .hint[hidden]{display:none}
+  .spin{position:absolute;right:10px;top:10px;width:18px;height:18px;border-radius:50%;
+    border:2.5px solid #d9d0bd;border-top-color:var(--accent);animation:sp .8s linear infinite;display:none}
+  .busy .spin{display:block}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .foot{color:var(--muted);font-size:.8rem}
+</style>
 </head>
 <body>
+<main>
+  <h1>Gargot a traç net</h1>
 
-    <div class="clock-container" id="clockContainer">
-        <!-- Cos del rellotge -->
-        <div class="clock-body">
-            <div class="crest">TEMPUS<br>FUGIT</div>
-            
-            <div class="clock-face" id="clockFace">
-                <!-- Els números es generaran amb JS -->
-                <div class="hand hour-hand" id="hourHand"></div>
-                <div class="hand minute-hand" id="minuteHand"></div>
-                <div class="center-pin"></div>
-            </div>
-        </div>
+  <div class="bar">
+    <select id="cat" aria-label="Què dibuixes?"></select>
+    <button id="undo" type="button">Desfés</button>
+    <button id="clear" type="button">Neteja</button>
+    <span class="grow"></span>
+    <button id="again" class="primary" type="button" disabled>Un altre intent</button>
+  </div>
 
-        <!-- Pèndol i pesos -->
-        <div class="pendulum-area">
-            <div class="pendulum-rod" id="pendulumRod">
-                <div class="pendulum-bob"></div>
-            </div>
-            <div class="weights-container">
-                <div class="weight" id="weightLeft"></div>
-                <div class="weight" id="weightRight"></div>
-            </div>
-        </div>
+  <div class="bar">
+    <label class="temp">Llibertat de la IA
+      <input id="temp" type="range" min="0.1" max="0.9" step="0.05" value="0.3">
+    </label>
+    <label class="chk"><input id="tint" type="checkbox" checked> Marca el que afegeix la IA</label>
+  </div>
 
-        <!-- Controls -->
-        <div class="controls">
-            <button class="btn" id="soundBtn">🔊 So: ON</button>
-            <button class="btn" id="themeBtn">🌗 Canviar Ambient</button>
-        </div>
-    </div>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
 
-    <!-- Barra de clima lliscant -->
-    <div class="weather-sheet" id="weatherSheet">
-        <div class="drag-handle" id="dragHandle"></div>
-        <div class="weather-content" id="weatherContent">
-            <div class="weather-item"><span>Localitat</span><span id="w-loc">Carregant...</span></div>
-            <div class="weather-item"><span>Temperatura</span><span id="w-temp">--°C</span></div>
-            <div class="weather-item"><span>Humitat</span><span id="w-hum">--%</span></div>
-            <div class="weather-item"><span>Sensació Tèrmica</span><span id="w-feel">--°C</span></div>
-            <div class="weather-item"><span>Vent</span><span id="w-wind">-- km/h</span></div>
-            <div class="weather-item"><span>Altitud</span><span id="w-alt">-- m</span></div>
-            <div class="alert-box" id="w-alert">⚠️ Alerta: Probabilitat alta de pluja</div>
-        </div>
-    </div>
+  <div class="boards">
+    <section class="card">
+      <h2>El teu gargot</h2>
+      <div class="board" id="paperBoard">
+        <canvas id="paper"></canvas>
+        <div class="hint" id="hint">Dibuixa amb el dit i espera un moment</div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Traç net</h2>
+      <div class="board" id="outBoard">
+        <canvas id="out"></canvas>
+        <div class="spin"></div>
+      </div>
+    </section>
+  </div>
 
-    <script>
-        // --- CONFIGURACIÓ I ESTAT ---
-        let soundEnabled = true;
-        let isNight = false;
-        let audioCtx = null;
-        let pendulumAngle = 0;
-        let lastTickTime = 0;
-        
-        // Elements DOM
-        const hourHand = document.getElementById('hourHand');
-        const minuteHand = document.getElementById('minuteHand');
-        const clockFace = document.getElementById('clockFace');
-        const soundBtn = document.getElementById('soundBtn');
-        const themeBtn = document.getElementById('themeBtn');
-        const weatherSheet = document.getElementById('weatherSheet');
-        const dragHandle = document.getElementById('dragHandle');
-        
-        // --- 1. GENERAR NÚMEROS ROMANS ---
-        function generateNumerals() {
-            const numerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
-            const radius = 75; // Radi per col·locar els números
-            numerals.forEach((num, i) => {
-                const angle = (i * 30 - 90) * (Math.PI / 180);
-                const x = radius * Math.cos(angle);
-                const y = radius * Math.sin(angle);
-                const el = document.createElement('div');
-                el.className = 'roman-numeral';
-                el.innerText = num;
-                el.style.left = `calc(50% + ${x}px)`;
-                el.style.top = `calc(50% + ${y}px)`;
-                el.style.transform = 'translate(-50%, -50%)';
-                clockFace.appendChild(el);
-            });
-        }
+  <div class="foot">Model sketch-rnn (Magenta) entrenat amb dibuixos de Quick, Draw!. Funciona al navegador; només cal connexió per baixar el model la primera vegada.</div>
+</main>
 
-        // --- 2. RELLOTGE I AGULLES ---
-        function updateClock() {
-            const now = new Date();
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const seconds = now.getSeconds();
+<script src="https://cdn.jsdelivr.net/npm/@magenta/sketch@0.2.0/dist/magentasketch.js"></script>
+<script>
+(() => {
+'use strict';
 
-            // Moviment de les agulles (suau)
-            const minDeg = (minutes + seconds / 60) * 6;
-            const hourDeg = ((hours % 12) + minutes / 60) * 30;
+// ---------- Configuració ----------
+const MODEL_BASE = 'https://storage.googleapis.com/quickdraw-models/sketchRNN/models/';
+const CATEGORIES = [
+  ['duck','Ànec'], ['cat','Gat'], ['dog','Gos'], ['bird','Ocell'], ['swan','Cigne'],
+  ['owl','Mussol'], ['pig','Porc'], ['sheep','Ovella'], ['frog','Granota'], ['snail','Caragol'],
+  ['butterfly','Papallona'], ['whale','Balena'], ['flower','Flor'], ['palm_tree','Palmera'],
+  ['speedboat','Llanxa'], ['cruise_ship','Creuer'], ['lighthouse','Far'], ['windmill','Molí'],
+  ['barn','Graner'], ['castle','Castell'], ['bicycle','Bicicleta'], ['bus','Autobús'],
+  ['truck','Camió'], ['helicopter','Helicòpter']
+];
+const MODEL_SPAN = 200;     // mida (en unitats Quick, Draw!) a la qual s'escala el gargot
+const MAX_STEPS  = 260;     // límit de punts que pot afegir el model
+const IDLE_MS    = 1400;    // pausa sense tocar abans de generar
 
-            minuteHand.style.transform = `translateX(-50%) rotate(${minDeg}deg)`;
-            hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+// ---------- DOM ----------
+const $ = s => document.querySelector(s);
+const paper = $('#paper'), out = $('#out');
+const catSel = $('#cat'), tempEl = $('#temp'), tintEl = $('#tint');
+const undoBtn = $('#undo'), clearBtn = $('#clear'), againBtn = $('#again');
+const statusEl = $('#status'), hintEl = $('#hint'), outBoard = $('#outBoard');
 
-            // So de Tic-Tac
-            if (soundEnabled && audioCtx) {
-                const nowTime = Date.now();
-                if (nowTime - lastTickTime > 1000) {
-                    playTick();
-                    lastTickTime = nowTime;
-                }
-            }
+for (const [id, name] of CATEGORIES) {
+  const o = document.createElement('option'); o.value = id; o.textContent = name; catSel.appendChild(o);
+}
 
-            // Campanades (simulades cada 15 min per no saturar)
-            if (minutes % 15 === 0 && seconds === 0) {
-                playChime(minutes === 0 ? hours : 1);
-            }
+// ---------- Estat ----------
+let W = 0, H = 0;           // mida CSS dels canvas
+let lines = [];             // gargot: llistes de [x/W, y/W] (independent de la mida)
+let drawing = null;         // traç en curs
+let idleTimer = 0;
+let genId = 0;              // invalida generacions antigues
+let anim = 0;               // id de requestAnimationFrame
+let result = null;          // { user: [[x,y]...], added: [[x,y]...] } en unitats del model
+const models = new Map();
 
-            // Actualitzar ambient si canvia d'hora
-            checkDayNight(hours);
-        }
+const INK = '#22304a', AI = '#0f766e';
 
-        // --- 3. SO (WEB AUDIO API) ---
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
+function setStatus(msg, err) { statusEl.textContent = msg || ''; statusEl.classList.toggle('err', !!err); }
+function setBusy(b) { outBoard.classList.toggle('busy', b); }
 
-        function playTick() {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
-            
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-            
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.05);
-        }
+// ---------- Canvas ----------
+function fit() {
+  const r = paper.getBoundingClientRect();
+  W = Math.max(1, Math.round(r.width)); H = Math.max(1, Math.round(r.height));
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  for (const c of [paper, out]) {
+    c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  redrawPaper();
+  if (result) drawResult(1);
+}
 
-        function playChime(count) {
-            if (!audioCtx || !soundEnabled) return;
-            for (let i = 0; i < count; i++) {
-                setTimeout(() => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(440, audioCtx.currentTime); // La 440
-                    osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.5);
-                    
-                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
-                    
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 1.5);
-                }, i * 600);
-            }
-        }
+function strokePath(ctx, pts) {
+  if (!pts.length) return;
+  if (pts.length === 1) {
+    ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); return;
+  }
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+    ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+  }
+  const l = pts[pts.length - 1]; ctx.lineTo(l[0], l[1]); ctx.stroke();
+}
 
-        // --- 4. AMBIENT DIA/NIT I ESTACIONS ---
-        function checkDayNight(hours) {
-            const isDayTime = hours >= 7 && hours < 19;
-            if (isDayTime && isNight) {
-                document.body.classList.remove('night');
-                isNight = false;
-            } else if (!isDayTime && !isNight) {
-                document.body.classList.add('night');
-                isNight = true;
-            }
-        }
+function redrawPaper() {
+  const ctx = paper.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = INK; ctx.fillStyle = INK; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const l of lines) strokePath(ctx, l.map(p => [p[0] * W, p[1] * W]));
+  hintEl.hidden = lines.length > 0;
+}
 
-        function toggleTheme() {
-            isNight = !isNight;
-            document.body.classList.toggle('night', isNight);
-        }
+// ---------- Entrada amb el dit / ratolí ----------
+function pt(e) {
+  const r = paper.getBoundingClientRect();
+  const x = (e.clientX - r.left) * (W / r.width), y = (e.clientY - r.top) * (H / r.height);
+  return [x / W, y / W];
+}
 
-        // --- 5. PESOS ARRASTRABLES ---
-        function makeDraggable(el) {
-            let startY, startTop;
-            const parent = el.parentElement;
+paper.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  paper.setPointerCapture(e.pointerId);
+  clearTimeout(idleTimer); genId++; stopAnim(); setBusy(false);
+  drawing = [pt(e)]; lines.push(drawing);
+  redrawPaper();
+});
+paper.addEventListener('pointermove', e => {
+  if (!drawing) return;
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  for (const ev of (evs.length ? evs : [e])) {
+    const p = pt(ev), q = drawing[drawing.length - 1];
+    if (Math.hypot((p[0] - q[0]) * W, (p[1] - q[1]) * W) >= 1.5) drawing.push(p);
+  }
+  redrawPaper();
+});
+function endStroke(e) {
+  if (!drawing) return;
+  const d = drawing; drawing = null;
+  let len = 0; for (let i = 1; i < d.length; i++) len += Math.hypot((d[i][0] - d[i - 1][0]) * W, (d[i][1] - d[i - 1][1]) * W);
+  if (len < 8) lines.splice(lines.indexOf(d), 1);   // un toc accidental no compta
+  redrawPaper();
+  scheduleGenerate();
+}
+paper.addEventListener('pointerup', endStroke);
+paper.addEventListener('pointercancel', endStroke);
+paper.addEventListener('contextmenu', e => e.preventDefault());
 
-            el.addEventListener('mousedown', startDrag);
-            el.addEventListener('touchstart', startDrag, {passive: false});
+function scheduleGenerate() {
+  clearTimeout(idleTimer);
+  if (!lines.length) { clearResult(); setStatus('Dibuixa alguna cosa amb el dit.'); return; }
+  setStatus('Sembla que has acabat… (segueix dibuixant si vols)');
+  idleTimer = setTimeout(generate, IDLE_MS);
+}
 
-            function startDrag(e) {
-                e.preventDefault();
-                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-                startY = clientY;
-                // Obtenir posició actual respecte al contenidor
-                const rect = el.getBoundingClientRect();
-                const parentRect = parent.getBoundingClientRect();
-                startTop = rect.top - parentRect.top;
+// ---------- Model ----------
+function loadModel(name) {
+  if (models.has(name)) return models.get(name);
+  if (typeof ms === 'undefined' || !ms.SketchRNN) {
+    return Promise.reject(new Error('No s\'ha pogut carregar la llibreria de Magenta.'));
+  }
+  const m = new ms.SketchRNN(MODEL_BASE + name + '.gen.json');
+  const p = m.initialize().then(() => { m.setPixelFactor(1.0); return m; });
+  models.set(name, p);
+  p.catch(() => models.delete(name));
+  return p;
+}
+const catName = id => (CATEGORIES.find(c => c[0] === id) || [, id])[1].toLowerCase();
+const tick = () => new Promise(r => setTimeout(r, 0));
 
-                document.addEventListener('mousemove', drag);
-                document.addEventListener('touchmove', drag, {passive: false});
-                document.addEventListener('mouseup', stopDrag);
-                document.addEventListener('touchend', stopDrag);
-            }
+// Suavitzat de cantonades (Chaikin) per a una polilínia oberta, conservant els extrems
+function chaikin(pts, iters) {
+  let p = pts;
+  for (let k = 0; k < iters && p.length > 2; k++) {
+    const q = [p[0]];
+    for (let i = 0; i < p.length - 1; i++) {
+      const a = p[i], b = p[i + 1];
+      q.push([a[0] * .75 + b[0] * .25, a[1] * .75 + b[1] * .25], [a[0] * .25 + b[0] * .75, a[1] * .25 + b[1] * .75]);
+    }
+    q.push(p[p.length - 1]); p = q;
+  }
+  return p;
+}
 
-            function drag(e) {
-                e.preventDefault();
-                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-                const deltaY = clientY - startY;
-                let newTop = startTop + deltaY;
-                
-                // Límit per no pujar més amunt del rellotge
-                if (newTop < -80) newTop = -80;
-                if (newTop > 0) newTop = 0;
+async function generate() {
+  clearTimeout(idleTimer);
+  if (!lines.length) return;
+  const my = ++genId;
+  stopAnim();
+  const id = catSel.value;
 
-                el.style.transform = `translateY(${newTop}px)`;
-            }
+  setBusy(true); againBtn.disabled = true;
+  let model;
+  try {
+    setStatus(models.has(id) ? 'Pensant…' : 'Baixant el model (' + catName(id) + ')…');
+    model = await loadModel(id);
+  } catch (err) {
+    if (my === genId) { setBusy(false); setStatus('No s\'ha pogut carregar el model (cal connexió a internet). ' + (err && err.message || ''), true); }
+    return;
+  }
+  if (my !== genId) return;
+  setStatus('Pensant…');
+  await tick();
 
-            function stopDrag() {
-                document.removeEventListener('mousemove', drag);
-                document.removeEventListener('touchmove', drag);
-                document.removeEventListener('mouseup', stopDrag);
-                document.removeEventListener('touchend', stopDrag);
+  try {
+    // 1) Gargot -> unitats del model (caixa de MODEL_SPAN)
+    const px = lines.map(l => l.map(p => [p[0] * W, p[1] * W])).filter(l => l.length > 1);
+    if (!px.length) { setBusy(false); return; }
+    let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+    for (const l of px) for (const p of l) { minx = Math.min(minx, p[0]); miny = Math.min(miny, p[1]); maxx = Math.max(maxx, p[0]); maxy = Math.max(maxy, p[1]); }
+    const S = MODEL_SPAN / Math.max(maxx - minx, maxy - miny, 20);
+    const scaled = px.map(l => l.map(p => [(p[0] - minx) * S, (p[1] - miny) * S]));
+    const simp = model.simplifyLines(scaled, 2.0).filter(l => l.length > 1);
+    if (!simp.length) { setBusy(false); return; }
 
-                // Efecte de caiguda gradual (simula el pes)
-                let currentTop = parseFloat(el.style.transform.replace('translateY(', '').replace('px)', '')) || 0;
-                const fallInterval = setInterval(() => {
-                    currentTop += 1;
-                    if (currentTop >= 0) {
-                        currentTop = 0;
-                        clearInterval(fallInterval);
-                    }
-                    el.style.transform = `translateY(${currentTop}px)`;
-                }, 100);
-            }
-        }
+    // 2) Alimentem el model amb el gargot
+    const strokes = model.linesToStroke(simp);
+    strokes.pop();                                   // traiem el "fi de dibuix": continuarem
+    let state = model.zeroState();
+    state = model.update(model.zeroInput(), state);
+    if (strokes.length) state = model.updateStrokes(strokes, state);
+    const last = simp[simp.length - 1][simp[simp.length - 1].length - 1];
+    let x = last[0], y = last[1];
 
-        // --- 6. BARRA DE CLIMA LLISCANT ---
-        function initWeatherSheet() {
-            let startY, startTransform;
-            const sheetHeight = 250;
-            const closedTransform = 210; // Quant queda visible
+    // 3) El model continua el dibuix
+    const temp = parseFloat(tempEl.value);
+    const added = [];
+    let cur = null, down = false;
+    for (let i = 0; i < MAX_STEPS; i++) {
+      const pdf = model.getPDF(state, temp);
+      const s = model.sample(pdf);
+      state = model.update(s, state);
+      const nx = x + s[0], ny = y + s[1];
+      if (down) {
+        if (!cur) { cur = [[x, y]]; added.push(cur); }
+        cur.push([nx, ny]);
+      } else cur = null;
+      x = nx; y = ny;
+      down = s[2] === 1;
+      if (s[3] === 1) cur = null;
+      if (s[4] === 1) break;
+      if (i % 12 === 11) { await tick(); if (my !== genId) return; }
+    }
+    if (my !== genId) return;
 
-            dragHandle.addEventListener('mousedown', startDrag);
-            dragHandle.addEventListener('touchstart', startDrag, {passive: false});
-            weatherSheet.addEventListener('mousedown', startDrag);
-            weatherSheet.addEventListener('touchstart', startDrag, {passive: false});
+    // 4) Netegem: suavitzat suau del gargot i del que afegeix el model
+    const userClean = simp.map(l => chaikin(model.simplifyLine(l, 1.2), 3));
+    const addedClean = added.filter(l => l.length > 1).map(l => chaikin(l, 2));
+    result = { user: userClean, added: addedClean };
+    setBusy(false); againBtn.disabled = false;
+    setStatus('Fet. Toca «Un altre intent» per veure una altra variant.');
+    startAnim();
+  } catch (err) {
+    console.error(err);
+    if (my === genId) { setBusy(false); setStatus('Error generant el dibuix: ' + (err && err.message || err), true); }
+  }
+}
 
-            function startDrag(e) {
-                if (e.target.closest('.weather-content')) return; // No interferir amb el contingut
-                e.preventDefault();
-                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-                startY = clientY;
-                startTransform = weatherSheet.classList.contains('open') ? 0 : closedTransform;
+// ---------- Resultat ----------
+function clearResult() {
+  genId++; stopAnim(); result = null; setBusy(false); againBtn.disabled = true;
+  out.getContext('2d').clearRect(0, 0, W, H);
+}
+function stopAnim() { if (anim) cancelAnimationFrame(anim); anim = 0; }
 
-                document.addEventListener('mousemove', drag);
-                document.addEventListener('touchmove', drag, {passive: false});
-                document.addEventListener('mouseup', stopDrag);
-                document.addEventListener('touchend', stopDrag);
-            }
+function polyLen(l) { let s = 0; for (let i = 1; i < l.length; i++) s += Math.hypot(l[i][0] - l[i - 1][0], l[i][1] - l[i - 1][1]); return s; }
 
-            function drag(e) {
-                e.preventDefault();
-                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-                const deltaY = clientY - startY;
-                let newTransform = startTransform + deltaY;
-                
-                if (newTransform < 0) newTransform = 0;
-                if (newTransform > closedTransform) newTransform = closedTransform;
+function drawResult(t) {                        // t = 0..1 (progrés de l'animació)
+  if (!result) return;
+  const all = result.user.concat(result.added);
+  let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+  for (const l of all) for (const p of l) { minx = Math.min(minx, p[0]); miny = Math.min(miny, p[1]); maxx = Math.max(maxx, p[0]); maxy = Math.max(maxy, p[1]); }
+  const m = 0.09, bw = Math.max(maxx - minx, 1), bh = Math.max(maxy - miny, 1);
+  const k = Math.min(W * (1 - 2 * m) / bw, H * (1 - 2 * m) / bh);
+  const ox = (W - bw * k) / 2 - minx * k, oy = (H - bh * k) / 2 - miny * k;
+  const tr = l => l.map(p => [p[0] * k + ox, p[1] * k + oy]);
 
-                weatherSheet.style.transform = `translateY(${newTransform}px)`;
-            }
+  const ctx = out.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(3.5, Math.min(W, H) / 70);
 
-            function stopDrag() {
-                document.removeEventListener('mousemove', drag);
-                document.removeEventListener('touchmove', drag);
-                document.removeEventListener('mouseup', stopDrag);
-                document.removeEventListener('touchend', stopDrag);
+  const total = all.reduce((s, l) => s + polyLen(l), 0) || 1;
+  let budget = t * total;
+  const nUser = result.user.length;
+  for (let i = 0; i < all.length && budget > 0; i++) {
+    const l = tr(all[i]), L = polyLen(l);
+    const col = (tintEl.checked && i >= nUser) ? AI : INK;
+    ctx.strokeStyle = col; ctx.fillStyle = col;
+    if (budget >= L - 1e-6) { strokePath(ctx, l); budget -= L; continue; }
+    // traç parcial
+    const part = [l[0]]; let acc = 0;
+    for (let j = 1; j < l.length; j++) {
+      const d = Math.hypot(l[j][0] - l[j - 1][0], l[j][1] - l[j - 1][1]);
+      if (acc + d >= budget) { const f = (budget - acc) / (d || 1); part.push([l[j - 1][0] + (l[j][0] - l[j - 1][0]) * f, l[j - 1][1] + (l[j][1] - l[j - 1][1]) * f]); break; }
+      part.push(l[j]); acc += d;
+    }
+    strokePath(ctx, part); budget = 0;
+  }
+}
 
-                const currentTransform = parseFloat(weatherSheet.style.transform.replace('translateY(', '').replace('px)', '')) || 0;
-                if (currentTransform < closedTransform / 2) {
-                    weatherSheet.classList.add('open');
-                    weatherSheet.style.transform = 'translateY(0)';
-                } else {
-                    weatherSheet.classList.remove('open');
-                    weatherSheet.style.transform = `translateY(${closedTransform}px)`;
-                }
-            }
-            
-            // Inicialitzar posició
-            weatherSheet.style.transform = `translateY(${closedTransform}px)`;
-        }
+function startAnim() {
+  stopAnim();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { drawResult(1); return; }
+  const dur = 2200, t0 = performance.now();
+  const step = now => {
+    const t = Math.min(1, (now - t0) / dur);
+    drawResult(1 - Math.pow(1 - t, 2));          // ease-out
+    anim = t < 1 ? requestAnimationFrame(step) : 0;
+  };
+  anim = requestAnimationFrame(step);
+}
 
-        // --- 7. DADES DEL CLIMA (SIMULADES) ---
-        function updateWeather() {
-            // Simulem dades aleatòries perquè vegis com funciona
-            const temp = (15 + Math.random() * 15).toFixed(1);
-            const hum = Math.floor(40 + Math.random() * 50);
-            const feel = (parseFloat(temp) - 1 + Math.random() * 2).toFixed(1);
-            const wind = (5 + Math.random() * 30).toFixed(0);
-            const alt = Math.floor(100 + Math.random() * 500);
+// ---------- Botons ----------
+undoBtn.addEventListener('click', () => { lines.pop(); redrawPaper(); scheduleGenerate(); });
+clearBtn.addEventListener('click', () => { clearTimeout(idleTimer); lines = []; redrawPaper(); clearResult(); setStatus('Dibuixa alguna cosa amb el dit.'); });
+againBtn.addEventListener('click', generate);
+tintEl.addEventListener('change', () => { if (result) drawResult(1); });
+catSel.addEventListener('change', () => {
+  const id = catSel.value;
+  if (lines.length) { generate(); }
+  else { setStatus('Baixant el model (' + catName(id) + ')…'); loadModel(id).then(() => { if (!lines.length) setStatus('Model llest (' + catName(id) + '). Dibuixa!'); }).catch(() => setStatus('No s\'ha pogut carregar el model (cal connexió a internet).', true)); }
+});
+tempEl.addEventListener('change', () => { if (lines.length && result) generate(); });
 
-            document.getElementById('w-loc').innerText = 'Barcelona (Simulat)';
-            document.getElementById('w-temp').innerText = `${temp}°C`;
-            document.getElementById('w-hum').innerText = `${hum}%`;
-            document.getElementById('w-feel').innerText = `${feel}°C`;
-            document.getElementById('w-wind').innerText = `${wind} km/h`;
-            document.getElementById('w-alt').innerText = `${alt} m`;
-
-            // Alertes (mostrar només si probabilitat alta)
-            const alertBox = document.getElementById('w-alert');
-            const rand = Math.random();
-            if (rand > 0.8) {
-                alertBox.style.display = 'block';
-                if (rand > 0.95) alertBox.innerText = '⚠️ Alerta: Risc de Neu';
-                else if (rand > 0.9) alertBox.innerText = '⚠️ Alerta: Vent Fort';
-                else alertBox.innerText = '⚠️ Alerta: Probabilitat alta de Pluja';
-            } else {
-                alertBox.style.display = 'none';
-            }
-        }
-
-        // --- INICIALITZACIÓ ---
-        window.onload = () => {
-            generateNumerals();
-            initWeatherSheet();
-            makeDraggable(document.getElementById('weightLeft'));
-            makeDraggable(document.getElementById('weightRight'));
-            
-            // Inicialitzar audio al primer clic (política de navegadors)
-            document.body.addEventListener('click', () => {
-                initAudio();
-            }, { once: true });
-
-            // Botons
-            soundBtn.addEventListener('click', () => {
-                soundEnabled = !soundEnabled;
-                soundBtn.innerText = soundEnabled ? '🔊 So: ON' : '🔇 So: OFF';
-                if (soundEnabled) initAudio();
-            });
-
-            themeBtn.addEventListener('click', toggleTheme);
-
-            // Actualitzacions
-            setInterval(updateClock, 1000);
-            setInterval(updateWeather, 60000); // Cada minut
-            updateWeather(); // Primera càrrega
-            updateClock(); // Primera càrrega
-            
-            // Ambient inicial
-            checkDayNight(new Date().getHours());
-        };
-
-    </script>
+window.addEventListener('resize', fit);
+fit();
+setStatus('Baixant el model (' + catName(catSel.value) + ')…');
+loadModel(catSel.value)
+  .then(() => { if (!lines.length) setStatus('Model llest (' + catName(catSel.value) + '). Dibuixa!'); })
+  .catch(err => setStatus('No s\'ha pogut carregar el model (cal connexió a internet). ' + (err && err.message || ''), true));
+})();
+</script>
 </body>
 </html>
